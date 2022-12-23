@@ -1,6 +1,6 @@
 const { PassThrough } = require('stream');
 
-const miniget= require('miniget');
+const miniget = require('miniget');
 
 const ytlive = (url) => {
     const stream = createStream();
@@ -29,7 +29,34 @@ const pipeAndSetEvents = (req, stream, end) => {
 
     req.pipe(stream, { end });
 };
-
+function getJsonFromUrl(url) {
+    if (!url) return;
+    var question = url.indexOf("?");
+    var hash = url.indexOf("#");
+    if (hash == -1 && question == -1) return {};
+    if (hash == -1) hash = url.length;
+    var query = question == -1 || hash == question + 1 ? url.substring(hash) :
+        url.substring(question + 1, hash);
+    var result = {};
+    query.split("&").forEach(function (part) {
+        if (!part) return;
+        part = part.split("+").join(" "); // replace every + with space, regexp-free version
+        var eq = part.indexOf("=");
+        var key = eq > -1 ? part.substr(0, eq) : part;
+        var val = eq > -1 ? decodeURIComponent(part.substr(eq + 1)) : "";
+        var from = key.indexOf("[");
+        if (from == -1) result[decodeURIComponent(key)] = val;
+        else {
+            var to = key.indexOf("]", from);
+            var index = decodeURIComponent(key.substring(from + 1, to));
+            key = decodeURIComponent(key.substring(0, from));
+            if (!result[key]) result[key] = [];
+            if (!index) result[key].push(val);
+            else result[key][index] = val;
+        }
+    });
+    return result;
+}
 const startStreaming = (stream, audioUrl) => {
     if (stream.destroyed) { return; };
     const requestOptions = Object.assign({}, {
@@ -38,6 +65,7 @@ const startStreaming = (stream, audioUrl) => {
         method: 'POST',
         headers: headersList
     });
+    let timer;
     let req;
     let downloaded = 0;
     let xSequenceNum = 0;
@@ -101,8 +129,11 @@ const startStreaming = (stream, audioUrl) => {
 
             sq++;
 
-            setTimeout(getNextChunk, delay)
-
+            if (delay > 4999) {
+                clearTimeout(timer)
+            } else {
+                timer = setTimeout(getNextChunk, delay)
+            }
         });
         pipeAndSetEvents(req, stream, false);
     };

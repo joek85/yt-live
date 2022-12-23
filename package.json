@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/joek85/yt-live#readme",
   "dependencies": {
+    "fluent-ffmpeg": "^2.1.2",
     "miniget": "^4.2.2"
   }
 }
