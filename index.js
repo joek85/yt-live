@@ -56,7 +56,13 @@ function getJsonFromUrl(url) {
         }
     });
     return result;
-}
+};
+function bytesToSize(bytes) {
+    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes == 0) return '0 Byte';
+    var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+};
 const startStreaming = (stream, audioUrl) => {
     if (stream.destroyed) { return; };
     const requestOptions = Object.assign({}, {
@@ -100,7 +106,7 @@ const startStreaming = (stream, audioUrl) => {
     }
     const ondata = chunk => {
         downloaded += chunk.length;
-        console.log('chunck length = ' + chunk.length + ' downloaded = ' + downloaded);
+        console.log('chunck length = ' + bytesToSize(chunk.length) + ' downloaded = ' + bytesToSize(downloaded));
     };
     const getNextChunk = () => {
         let url;
@@ -130,7 +136,8 @@ const startStreaming = (stream, audioUrl) => {
             sq++;
 
             if (delay > 4999) {
-                clearTimeout(timer)
+                clearTimeout(timer);
+                getNextChunk();
             } else {
                 timer = setTimeout(getNextChunk, delay)
             }
